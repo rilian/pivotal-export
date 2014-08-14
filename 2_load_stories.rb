@@ -12,7 +12,7 @@ FileUtils.rm_rf('tmp/.')
 
 PROJECT_IDS.each do |project_id|
   offset = 0
-  limit = 100
+  limit = ENV['PIVOTAL_CHUNK_SIZE']
   received = 0
   begin
     path = "#{PIVOTAL_API_URI}/projects/#{project_id}/stories?limit=#{limit}&offset=#{offset}&date_format=millis"

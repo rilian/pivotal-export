@@ -7,43 +7,9 @@ ActiveRecord::Base.establish_connection({
   host: 'localhost'
 })
 
-if ENV['DROP_TABLES'] == 'true'
-  ActiveRecord::Base.connection.execute('
-    DROP TABLE IF EXISTS "stories";
-
-    CREATE TABLE "stories" (
-      "id" varchar,
-      "project_id" int8,
-      "url" varchar,
-      "kind" varchar,
-      "story_type" varchar,
-      "created_at" int8,
-      "updated_at" int8,
-      "accepted_at" int8 NULL,
-      "current_state" varchar,
-      "labels" varchar,
-      "estimate" int8,
-      "name" text,
-      "description" text,
-      "requested_by_id" int8,
-      "owner_ids" varchar
-    )
-    WITH (OIDS=FALSE);
-
-    DROP TABLE IF EXISTS "features";
-
-    CREATE TABLE "features" (
-      "id" varchar,
-      "priority" int8,
-      "name" varchar
-    )
-    WITH (OIDS=FALSE);
-  ')
-end
-
 def get_story_record(json)
   labels = json['labels'].collect{ |l| l['name'] }
-  labels << "F#{rand(@features.count)}" if ENV['RANDOMIZE_LABELS'] == 'true'
+  labels << "F#{(1 + rand(@features.count))}" if ENV['RANDOMIZE_LABELS'] == 'true' if @features
 
   "INSERT INTO \"stories\" (
     id,
