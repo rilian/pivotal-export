@@ -1,3 +1,5 @@
+puts 'Load stories from Pivotal'
+
 require 'fileutils'
 require 'json'
 

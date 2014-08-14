@@ -1,3 +1,5 @@
+puts 'Import stories from local files'
+
 if ENV['DROP_TABLES'] == 'true'
   ActiveRecord::Base.connection.execute('
     DROP TABLE IF EXISTS "stories";

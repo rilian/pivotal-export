@@ -1,3 +1,5 @@
+puts "Import features from #{ENV['FEATURES_FILE']}"
+
 if ENV['DROP_TABLES'] == 'true'
   ActiveRecord::Base.connection.execute('
     DROP TABLE IF EXISTS "features";
