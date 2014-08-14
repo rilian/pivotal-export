@@ -14,6 +14,7 @@ def get_story_record(json)
   "INSERT INTO \"stories\" (
     id,
     project_id,
+    feature_id,
     url,
     kind,
     story_type,
@@ -30,6 +31,7 @@ def get_story_record(json)
   ) VALUES (
     '#{json['id']}',
     #{json['project_id']},
+    NULL,
     '#{json['url']}',
     '#{json['kind']}',
     '#{json['story_type']}',

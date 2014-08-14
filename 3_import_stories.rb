@@ -5,6 +5,7 @@ if ENV['DROP_TABLES'] == 'true'
     CREATE TABLE "stories" (
       "id" varchar,
       "project_id" int8,
+      "feature_id" int8,
       "url" varchar,
       "kind" varchar,
       "story_type" varchar,
