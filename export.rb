@@ -1,6 +1,5 @@
 require 'dotenv'
 require 'byebug'
-
 Dotenv.load
 
 puts 'Running Pivotal Parser'

@@ -1,3 +1,6 @@
+require 'dotenv'
+Dotenv.load
+
 require_relative 'db'
 
 puts 'Import stories from local files'

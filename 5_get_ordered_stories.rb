@@ -1,3 +1,6 @@
+require 'dotenv'
+Dotenv.load
+
 require_relative 'db'
 
 puts 'Produce prioritized stories report'
@@ -36,11 +39,11 @@ f.write('
 raw.values.each do |value|
   f.write("
       <tr>
-        <td>#{value[0]}</td>
-        <td>#{value[1]}</td>
-        <td>#{value[2]}</td>
-        <td>#{value[3]}</td>
-        <td>#{value[4]}</td>
+        <td>#{value[0].strip}</td>
+        <td>#{value[1].strip}</td>
+        <td>#{value[2].strip}</td>
+        <td>#{value[3].strip}</td>
+        <td>#{value[4].strip}</td>
       </tr>")
 end
 

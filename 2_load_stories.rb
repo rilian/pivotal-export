@@ -1,5 +1,5 @@
-puts 'Load stories from Pivotal'
-
+require 'dotenv'
+Dotenv.load
 require 'fileutils'
 require 'json'
 
@@ -9,6 +9,8 @@ PIVOTAL_API_URI = 'https://www.pivotaltracker.com/services/v5'
 
 Dir.mkdir('tmp') unless Dir.exists?('tmp')
 FileUtils.rm_rf('tmp/.')
+
+puts 'Load stories from Pivotal'
 
 @stories = []
 

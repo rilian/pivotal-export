@@ -1,3 +1,6 @@
+require 'dotenv'
+Dotenv.load
+
 require_relative 'db'
 
 puts 'Assign feature_id to stories table'

@@ -1,3 +1,5 @@
+require 'dotenv'
+Dotenv.load
 require_relative 'db'
 
 puts "Import features from #{ENV['FEATURES_FILE']}"
