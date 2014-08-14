@@ -7,30 +7,44 @@ ActiveRecord::Base.establish_connection({
   host: 'localhost'
 })
 
-ActiveRecord::Base.connection.execute('
-  DROP TABLE IF EXISTS "stories";
+if ENV['DROP_TABLES'] == 'true'
+  ActiveRecord::Base.connection.execute('
+    DROP TABLE IF EXISTS "stories";
 
-  CREATE TABLE "stories" (
-    "id" int8 NULL,
-    "project_id" int8,
-    "url" varchar,
-    "kind" varchar,
-    "story_type" varchar,
-    "created_at" int8,
-    "updated_at" int8,
-    "accepted_at" int8 NULL,
-    "current_state" varchar,
-    "labels" varchar,
-    "estimate" int8,
-    "name" text,
-    "description" text,
-    "requested_by_id" int8,
-    "owner_ids" varchar
-  )
-  WITH (OIDS=FALSE);
-')
+    CREATE TABLE "stories" (
+      "id" varchar,
+      "project_id" int8,
+      "url" varchar,
+      "kind" varchar,
+      "story_type" varchar,
+      "created_at" int8,
+      "updated_at" int8,
+      "accepted_at" int8 NULL,
+      "current_state" varchar,
+      "labels" varchar,
+      "estimate" int8,
+      "name" text,
+      "description" text,
+      "requested_by_id" int8,
+      "owner_ids" varchar
+    )
+    WITH (OIDS=FALSE);
+
+    DROP TABLE IF EXISTS "features";
+
+    CREATE TABLE "features" (
+      "id" varchar,
+      "priority" int8,
+      "name" varchar
+    )
+    WITH (OIDS=FALSE);
+  ')
+end
 
 def get_story_record(json)
+  labels = json['labels'].collect{ |l| l['name'] }
+  labels << "F#{rand(@features.count)}" if ENV['RANDOMIZE_LABELS'] == 'true'
+
   "INSERT INTO \"stories\" (
     id,
     project_id,
@@ -48,7 +62,7 @@ def get_story_record(json)
     requested_by_id,
     owner_ids
   ) VALUES (
-    #{json['id']},
+    '#{json['id']}',
     #{json['project_id']},
     '#{json['url']}',
     '#{json['kind']}',
@@ -57,7 +71,7 @@ def get_story_record(json)
     #{json['updated_at']},
     #{json['accepted_at'] || 'NULL'},
     '#{json['current_state']}',
-    #{ActiveRecord::Base.connection.quote(json['labels'].collect{ |l| l['name'] }.join(','))},
+    #{ActiveRecord::Base.connection.quote(labels.join(','))},
     #{json['estimate'] || 0},
     #{ActiveRecord::Base.connection.quote((json['name'] || ''))},
     #{ActiveRecord::Base.connection.quote((json['description'] || ''))},
