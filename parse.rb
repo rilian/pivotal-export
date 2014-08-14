@@ -12,4 +12,6 @@ require_relative 'import_features'
 require_relative 'load_stories'
 require_relative 'import_stories'
 
+require_relative 'get_ordered_stories'
+
 puts 'Done'
