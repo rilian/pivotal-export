@@ -1,21 +1,19 @@
 puts 'Produce prioritized stories report'
 
-raw = ActiveRecord::Base.connection.execute("
-  SELECT DISTINCT
+raw = ActiveRecord::Base.connection.execute('
+  SELECT
     features.id        AS feature_id,
     features.name      AS feature_name,
     features.priority,
     stories.id         AS story_id,
     stories.name       AS story_name
 
-  FROM features
+  FROM stories
 
-  JOIN stories
-    ON (stories.labels LIKE '%F' || features.id) OR
-       (stories.labels LIKE '%F' || features.id || ',')
+  JOIN features ON stories.feature_id = CAST(features.id AS int8)
 
   ORDER BY features.priority ASC, features.id ASC, stories.id ASC
-")
+')
 
 f = File.open('tmp/ordered_stories.html', 'w')
 f.write('
