@@ -1,3 +1,5 @@
+require_relative 'db'
+
 puts 'Assign feature_id to stories table'
 
 ActiveRecord::Base.connection.execute("

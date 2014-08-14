@@ -5,8 +5,6 @@ Dotenv.load
 
 puts 'Running Pivotal Parser'
 
-require_relative 'db'
-
 require_relative '1_import_features'
 require_relative '2_load_stories'
 require_relative '3_import_stories'

@@ -1,3 +1,5 @@
+require_relative 'db'
+
 puts 'Produce prioritized stories report'
 
 raw = ActiveRecord::Base.connection.execute('
