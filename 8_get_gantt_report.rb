@@ -53,7 +53,7 @@ days.each { |day| f.write "<th>#{day.strftime('%a')}</th>" }
 
 f.write('</tr>')
 
-f.close
+
 
 # Take prioritized Features that have Stories that split to Sprints
 raw_features = ActiveRecord::Base.connection.execute('
@@ -64,9 +64,36 @@ raw_features = ActiveRecord::Base.connection.execute('
 ')
 
 raw_features.each do |feature|
+  f.write('<tr>')
 
+  f.write("<td>#{feature['name']}</td>")
+  f.write("<td>#{feature['id']}</td>")
+  f.write("<td>#{feature['priority']}</td>")
+
+  f.write('</tr>')
 end
 
 # For each Feature, find tasks in sprints, and add to calendar array
-# Take all other prioritized Features without Stories
 
+# Take all other prioritized Features without Stories
+f.write("<tr><td colspan=#{4 + days.count}>Unestimated</td>")
+
+raw_features = ActiveRecord::Base.connection.execute('
+  SELECT *
+  FROM features
+  WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0)
+  ORDER BY priority ASC, id ASC
+')
+
+raw_features.each do |feature|
+  f.write('<tr>')
+
+  f.write("<td>#{feature['name']}</td>")
+  f.write("<td>#{feature['id']}</td>")
+  f.write("<td>#{feature['priority']}</td>")
+
+  f.write('</tr>')
+end
+
+
+f.close
