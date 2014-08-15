@@ -4,7 +4,7 @@ require 'byebug'
 
 require_relative 'db'
 
-puts 'Produce Sprints plan'
+puts 'Produce Sprints report'
 
 raw = ActiveRecord::Base.connection.execute('
   SELECT
