@@ -73,16 +73,18 @@ raw = ActiveRecord::Base.connection.execute('
 @unassigned = []
 
 raw.each do |record|
-  record['owner_ids'].split(',').each do |id|
-    if ENV['BACKEND_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
-      @backend << record
-    elsif ENV['FRONTEND_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
-      @frontend << record
-    elsif ENV['MOBILE_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
-      @mobile << record
-    else
-      @unassigned << record
+  if record['owner_ids'].split(',').count > 0
+    record['owner_ids'].split(',').each do |id|
+      if ENV['BACKEND_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
+        @backend << record
+      elsif ENV['FRONTEND_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
+        @frontend << record
+      elsif ENV['MOBILE_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
+        @mobile << record
+      end
     end
+  else
+    @unassigned << record
   end
 end
 
@@ -92,7 +94,6 @@ puts "Mobile stories     #{@mobile.count}"
 puts "Unassigned stories #{@unassigned.count}"
 
 sprints = [{ stories: [], backend_estimate: 0, frontend_estimate: 0, mobile_estimate: 0, unassigned_estimate: 0 }]
-sprint_size_for_developer = 24
 estimate_multiplier = 1
 
 %w[backend frontend mobile].each do |kind|
@@ -101,7 +102,7 @@ estimate_multiplier = 1
   instance_variable_get("@#{kind}").each do |story|
     # Find first sprint to put story
     puts "current_sprint_id=#{current_sprint_id} estimate=#{sprints[current_sprint_id]["#{kind}_estimate".to_sym]} story_est=#{story['estimate'].to_i*estimate_multiplier}"
-    while sprints[current_sprint_id]["#{kind}_estimate".to_sym] + story['estimate'].to_i*estimate_multiplier > (sprint_size_for_developer * ENV["#{kind.upcase}_DEVELOPER_IDS"].split(',').count)
+    while sprints[current_sprint_id]["#{kind}_estimate".to_sym] + story['estimate'].to_i*estimate_multiplier > (ENV['SPRINT_SIZE'].to_i * ENV["#{kind.upcase}_DEVELOPER_IDS"].split(',').count)
       current_sprint_id += 1
       sprints << { stories: [], backend_estimate: 0, frontend_estimate: 0, mobile_estimate: 0, unassigned_estimate: 0 }
     end
@@ -125,7 +126,7 @@ max_resource_developers = [ENV['BACKEND_DEVELOPER_IDS'].split(',').count, ENV['F
 
 @unassigned.each do |story|
   # Find first sprint to put story
-  while sprints[current_sprint_id][:unassigned_estimate] + story['estimate'].to_i*estimate_multiplier > (sprint_size_for_developer * max_resource_developers)
+  while sprints[current_sprint_id][:unassigned_estimate] + story['estimate'].to_i*estimate_multiplier > (ENV['SPRINT_SIZE'].to_i * max_resource_developers)
     current_sprint_id += 1
     sprints << { stories: [], backend_estimate: 0, frontend_estimate: 0, mobile_estimate: 0, unassigned_estimate: 0 }
   end
@@ -143,7 +144,7 @@ if ENV['DROP_TABLES'] == 'true'
 
     CREATE TABLE "sprints" (
       "id" int8,
-      "feature_id" varchar,
+      "feature_id" int8 NULL,
       "feature_name" varchar,
       "feature_priority" int8,
       "story_id" varchar,
@@ -163,7 +164,7 @@ def get_resource_from_dev_id(id)
   elsif ENV['MOBILE_DEVELOPER_IDS'].split(',').any? { |dev_id| id == dev_id }
     'mobile'
   else
-    'unknown'
+    'unassigned'
   end
 end
 
@@ -183,8 +184,8 @@ sprints.each_with_index do |sprint, index|
         story_resource
       ) VALUES (
         #{index},
-        '#{story['feature_id']}',
-        #{(ActiveRecord::Base.connection.quote(story['feature_name'] || '').strip)},
+        #{story['feature_id'] || 'NULL'},
+        #{(ActiveRecord::Base.connection.quote((story['feature_name'] || '').strip))},
         #{story['priority'] || 'NULL'},
         '#{story['id']}',
         #{ActiveRecord::Base.connection.quote(story['name'].strip)},

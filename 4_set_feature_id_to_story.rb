@@ -11,8 +11,9 @@ ActiveRecord::Base.connection.execute("
     SELECT features.id
     FROM features
     WHERE
-      (stories.labels LIKE '%f' || CAST(features.id as varchar)) OR
-      (stories.labels LIKE '%f' || CAST(features.id as varchar) || ',')
+      stories.labels LIKE '%f' || CAST(features.id as varchar)
+      OR stories.labels LIKE '%f' || CAST(features.id as varchar) || ',%'
+      OR stories.labels = 'f' || CAST(features.id as varchar)
     ORDER BY features.priority ASC
     LIMIT 1
   )
