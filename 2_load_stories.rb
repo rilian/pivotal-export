@@ -32,4 +32,4 @@ end
 
 @stories.flatten!
 
-puts "Total #{@stories.count} stories loaded"
+puts "Total #{@stories.count} stories loaded from Pivotal"

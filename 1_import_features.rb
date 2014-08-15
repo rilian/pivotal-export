@@ -9,7 +9,7 @@ if ENV['DROP_TABLES'] == 'true'
     DROP TABLE IF EXISTS "features";
 
     CREATE TABLE "features" (
-      "id" varchar,
+      "id" int8,
       "priority" int8,
       "name" varchar
     )
@@ -28,13 +28,13 @@ if File.exists?(ENV['FEATURES_FILE'])
            priority,
            name
          ) VALUES (
-           '#{matches['id']}',
+           #{matches['id']},
            #{matches['priority']},
            #{ActiveRecord::Base.connection.quote(matches['name'])}
          );"
       )
     else
-      puts "ERROR: Feature cannot be parsed: #{feature}"
+      puts "INFO: Feature cannot be parsed: #{feature}"
     end
   end
 end

@@ -3,7 +3,7 @@ Dotenv.load
 
 require_relative 'db'
 
-puts 'Produce prioritized stories report'
+puts 'Produce prioritized Stories report'
 
 raw = ActiveRecord::Base.connection.execute('
   SELECT
@@ -15,7 +15,7 @@ raw = ActiveRecord::Base.connection.execute('
 
   FROM stories
 
-  JOIN features ON stories.feature_id = CAST(features.id AS int8)
+  JOIN features ON stories.feature_id = features.id
 
   ORDER BY features.priority ASC, features.id ASC, stories.id ASC
 ')
