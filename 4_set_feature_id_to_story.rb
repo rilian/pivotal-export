@@ -11,9 +11,10 @@ ActiveRecord::Base.connection.execute("
     SELECT CAST(features.id AS int8)
     FROM features
     WHERE
-      (stories.labels LIKE '%F' || features.id) OR
-      (stories.labels LIKE '%F' || features.id || ',')
+      (stories.labels LIKE '%f' || features.id) OR
+      (stories.labels LIKE '%f' || features.id || ',')
     ORDER BY features.priority ASC
     LIMIT 1
   )
 ")
+

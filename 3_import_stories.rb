@@ -7,7 +7,7 @@ puts 'Import stories from local files'
 
 def get_story_record(json)
   labels = json['labels'].collect{ |l| l['name'] }
-  labels << "F#{(1 + rand(@features.count))}" if ENV['RANDOMIZE_LABELS'] == 'true' if @features
+  labels << "f#{(1 + rand(@features.count))}" if ENV['RANDOMIZE_LABELS'] == 'true' if @features
 
   "INSERT INTO \"stories\" (
     id,
@@ -45,7 +45,6 @@ def get_story_record(json)
     '#{(json['owner_ids'] + Array.wrap(json['owned_by_id'])).uniq.join(',')}'
   );"
 end
-
 
 if ENV['DROP_TABLES'] == 'true'
   ActiveRecord::Base.connection.execute('

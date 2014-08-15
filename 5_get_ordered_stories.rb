@@ -24,6 +24,7 @@ f = File.open('tmp/ordered_stories.html', 'w')
 f.write('
 <html>
   <head>
+    <title>Stories ordered</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   </head>
   <body>
