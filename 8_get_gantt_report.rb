@@ -21,6 +21,8 @@ f.write('
         <th></th>
         <th></th>
         <th></th>
+        <th></th>
+        <th></th>
         <th>Sprint &rarr;</th>')
 
 # Calculate helpers
@@ -37,6 +39,8 @@ end
 
 f.write('
       <tr>
+        <th></th>
+        <th></th>
         <th></th>
         <th></th>
         <th></th>
@@ -71,7 +75,9 @@ f.write('</tr>
         <th>Feature</th>
         <th>ID</th>
         <th>Priority</th>
-        <th>Estimated Duration</th>')
+        <th>Start</th>
+        <th>End</th>
+        <th>Duration</th>')
 
 dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
 
@@ -95,6 +101,18 @@ raw_features.each do |feature|
   f.write("<td>#{feature['name']}</td>")
   f.write("<td>#{feature['id']}</td>")
   f.write("<td>#{feature['priority']}</td>")
+
+  raw_start_day = ActiveRecord::Base.connection.execute("
+    SELECT min(id) FROM days WHERE feature_id=#{feature['id']}")
+  start_day_id = raw_start_day.to_a.first['min'].to_i
+  date_id = (start_day_id + (start_day_id / 7).to_i * free_days).to_i
+  f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+
+  raw_end_day = ActiveRecord::Base.connection.execute("
+    SELECT max(id) FROM days WHERE feature_id=#{feature['id']}")
+  end_day_id = raw_end_day.to_a.first['max'].to_i
+  date_id = (end_day_id + (end_day_id / 7).to_i * free_days).to_i
+  f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
 
   raw_duration = ActiveRecord::Base.connection.execute("
     SELECT SUM(story_estimate) as sum FROM days WHERE feature_id=#{feature['id']}
@@ -130,6 +148,18 @@ end
 
 # Draw Planned work
 f.write('<tr><td>Planned work</td><td>&nbsp;</td><td>&nbsp;</td>')
+
+raw_start_day = ActiveRecord::Base.connection.execute('
+    SELECT min(id) FROM days WHERE feature_id IS NULL')
+start_day_id = raw_start_day.to_a.first['min'].to_i
+date_id = (start_day_id + (start_day_id / 7).to_i * free_days).to_i
+f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+
+raw_end_day = ActiveRecord::Base.connection.execute('
+    SELECT max(id) FROM days WHERE feature_id IS NULL')
+end_day_id = raw_end_day.to_a.first['max'].to_i
+date_id = (end_day_id + (end_day_id / 7).to_i * free_days).to_i
+f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
 
 raw_duration = ActiveRecord::Base.connection.execute('
   SELECT SUM(story_estimate) as sum FROM days WHERE feature_id IS NULL')
