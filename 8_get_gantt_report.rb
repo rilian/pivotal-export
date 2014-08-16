@@ -62,6 +62,7 @@ end
 
 next_start_of_week_date = date_of_next('Monday')
 dates = []
+csv_data = []
 current_date = next_start_of_week_date
 real_days_count.times do
   dates << current_date
@@ -98,7 +99,9 @@ raw_features = ActiveRecord::Base.connection.execute('
 
 raw_features.each do |feature|
   f.write('<tr>')
+
   f.write("<td>#{feature['name']}</td>")
+  csv_data << { group_name: feature['name'].strip }
   f.write("<td>#{feature['id']}</td>")
   f.write("<td>#{feature['priority']}</td>")
 
@@ -107,12 +110,14 @@ raw_features.each do |feature|
   start_day_id = raw_start_day.to_a.first['min'].to_i
   date_id = (start_day_id + (start_day_id / 7).to_i * free_days).to_i
   f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+  csv_data.last[:start_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_end_day = ActiveRecord::Base.connection.execute("
     SELECT max(id) FROM days WHERE feature_id=#{feature['id']}")
   end_day_id = raw_end_day.to_a.first['max'].to_i
   date_id = (end_day_id + (end_day_id / 7).to_i * free_days).to_i
   f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+  csv_data.last[:end_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_duration = ActiveRecord::Base.connection.execute("
     SELECT SUM(story_estimate) as sum FROM days WHERE feature_id=#{feature['id']}
@@ -127,9 +132,16 @@ raw_features.each do |feature|
       day_id = (index - (index / 7).to_i * free_days).to_i
 
       raw_days = ActiveRecord::Base.connection.execute("
-        SELECT * FROM days WHERE id='#{day_id}' and feature_id=#{feature['id']}")
+        SELECT sum(story_estimate) as story_estimate, story_project_id
+        FROM days
+        WHERE id='#{day_id}' and feature_id=#{feature['id']}
+        GROUP BY story_project_id
+      ")
+
+      total_estimate_day = 0
       raw_days.each do |day|
-        f.write("#{day['story_estimate']} #{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+        total_estimate_day += day['story_estimate'].to_i
+        f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
       end
 
     else
@@ -194,3 +206,12 @@ f.write('</table></body></html>')
 f.close
 
 puts 'Gantt Chart built'
+
+puts 'Produce Teamgantt CSV'
+f = File.open('tmp/teamgantt.csv', 'w')
+csv_data.each do |data|
+  f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
+end
+f.close
+puts 'Teamgantt CSV built'
+
