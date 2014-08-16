@@ -55,7 +55,7 @@ end
 
 days = []
 raw_stories.each do |story|
-  day_effort = ENV["#{story['project_id']}_DEVELOPERS"].to_i * 8.0 * ENV['SPRINT_SIZE'].to_i / 40.0
+  day_effort = ENV["#{story['project_id']}_DEVELOPERS"].to_i * 8.0
   puts "day_effort = #{day_effort}"
 
   day_id = 0
