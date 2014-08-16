@@ -6,9 +6,6 @@ require_relative 'db'
 puts 'Import stories from local files'
 
 def get_story_record(json)
-  labels = json['labels'].collect{ |l| l['name'] }
-  labels << "f#{(1 + rand(@features.count))}" if ENV['RANDOMIZE_LABELS'] == 'true' if @features
-
   "INSERT INTO \"stories\" (
     id,
     project_id,
@@ -37,7 +34,7 @@ def get_story_record(json)
     #{json['updated_at']},
     #{json['accepted_at'] || 'NULL'},
     '#{json['current_state']}',
-    #{ActiveRecord::Base.connection.quote(labels.join(','))},
+    #{ActiveRecord::Base.connection.quote(json['labels'].collect{ |l| l['name'] }.join(','))},
     #{json['estimate'] || 0},
     #{ActiveRecord::Base.connection.quote((json['name'] || ''))},
     #{ActiveRecord::Base.connection.quote((json['description'] || ''))},
