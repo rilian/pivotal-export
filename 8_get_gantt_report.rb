@@ -23,10 +23,15 @@ f.write('
         <th></th>
         <th>Sprint &rarr;</th>')
 
-raw_sprints_count = ActiveRecord::Base.connection.execute('SELECT COUNT(DISTINCT id) FROM sprints')
-sprints_count = raw_sprints_count.to_a.first['count'].to_i
+# Calculate helpers
+sprint_days = 5 * ENV['SPRINT_SIZE'].to_i / 40.0
+days_count = ActiveRecord::Base.connection.execute('SELECT COUNT(DISTINCT id) FROM days').to_a.first['count'].to_i
+sprints = (days_count / sprint_days).ceil.to_i
+free_days = 7 - sprint_days
+holidays = (sprints * free_days).to_i
+real_days_count = days_count + holidays
 
-sprints_count.times do |i|
+sprints.times do |i|
   f.write "<th colspan=\"7\">#{i + 1}</th>"
 end
 
@@ -43,15 +48,23 @@ def date_of_next(day)
   date + delta
 end
 
+def is_free_day?(index, free_days)
+  (index % 7).to_i >= 7 - free_days
+  end
+
+def is_weekend?(index)
+  (index % 7).to_i >= 5
+end
+
 next_start_of_week_date = date_of_next('Monday')
-days = []
+dates = []
 current_date = next_start_of_week_date
-(sprints_count * 7).times do
-  days << current_date
+real_days_count.times do
+  dates << current_date
   current_date = current_date + 1.day
 end
 
-days.each { |day| f.write "<th>#{day.strftime('%d %b')}</th>" }
+dates.each { |day| f.write "<th>#{day.strftime('%d %b')}</th>" }
 
 f.write('</tr>
       <tr>
@@ -60,109 +73,94 @@ f.write('</tr>
         <th>Priority</th>
         <th>Estimated Duration</th>')
 
-days.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
+dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
 
 f.write('</tr>')
 
-# Take prioritized Features that have Stories that split to Sprints
+# Take prioritized Features, first with stories, then other
 raw_features = ActiveRecord::Base.connection.execute('
-  SELECT *
+  (SELECT *
   FROM features
   WHERE id IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
-  ORDER BY priority ASC, id ASC
+  ORDER BY priority ASC, id ASC)
+  UNION ALL
+  (SELECT *
+  FROM features
+  WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
+  ORDER BY priority ASC, id ASC)
 ')
-
-global_taken_days = []
-total_duration = 0
 
 raw_features.each do |feature|
   f.write('<tr>')
-
   f.write("<td>#{feature['name']}</td>")
   f.write("<td>#{feature['id']}</td>")
   f.write("<td>#{feature['priority']}</td>")
 
-  # total duration
   raw_duration = ActiveRecord::Base.connection.execute("
-    SELECT SUM(story_estimate) as sum FROM sprints WHERE feature_id=#{feature['id']}
-")
+    SELECT SUM(story_estimate) as sum FROM days WHERE feature_id=#{feature['id']}
+  ")
   duration = raw_duration.to_a.first['sum'].to_i
-  total_duration += duration
   f.write("<td>#{duration}</td>")
 
-  # space
-  f.write('<td></td>' * global_taken_days.count)
-
-  #
-  raw_stories = ActiveRecord::Base.connection.execute("
-    SELECT * FROM sprints WHERE feature_id=#{feature['id']}
-  ")
-
-  def total_day_estimate(day, kind)
-    total = 0
-    day[kind.to_s.to_sym].each do |story|
-      total = total + story['story_estimate'].to_i if story['story_resource'] == kind.to_s
-    end
-    total
-  end
-
-  feature_days = []
-  feature_days << global_taken_days.last if global_taken_days.last
-  current_day = 0
-  raw_stories.each do |story|
-    if feature_days[current_day].nil?
-      puts 'create day'
-      feature_days << { backend: [], frontend: [], mobile: [], unassigned: [] }
-    end
-
-    if total_day_estimate(feature_days.last, story['story_resource']) + story['story_estimate'].to_i <= 8
-      puts "put #{story['story_estimate']}h #{story['story_resource']} story into day #{current_day}"
-      feature_days.last[story['story_resource'].to_sym] << story
-    else
-      puts 'create day'
-      current_day += 1
-      feature_days << { backend: [], frontend: [], mobile: [], unassigned: [] }
-      puts "put #{story['story_estimate']}h #{story['story_resource']} story into day #{current_day}"
-      feature_days.last[story['story_resource'].to_sym] << story
-    end
-  end
-
-  feature_days.each do |day|
+  dates.each_with_index do |date, index|
     f.write('<td>')
-    %i[backend frontend mobile unassigned].each do |kind|
-      f.write(day[kind].collect{|i| i['story_estimate'] }.join('+') + "&nbsp;#{kind}<br/>") if !day[kind].empty?
+
+    if !is_free_day?(index, free_days)
+      day_id = (index - (index / 7).to_i * free_days).to_i
+
+      raw_days = ActiveRecord::Base.connection.execute("
+        SELECT * FROM days WHERE id='#{day_id}' and feature_id=#{feature['id']}")
+      raw_days.each do |day|
+        f.write("#{day['story_estimate']} #{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+      end
+
+    else
+      if !is_weekend?(index)
+        f.write('&nbsp;')
+      else
+        f.write('-')
+      end
     end
+
     f.write('</td>')
   end
 
   f.write('</tr>')
-
-  global_taken_days << feature_days
-  global_taken_days = global_taken_days.compact.flatten
 end
 
-# For each Feature, find tasks in sprints, and add to calendar array
+# Draw Planned work
+f.write('<tr><td>Planned work</td><td>&nbsp;</td><td>&nbsp;</td>')
 
-# Take all other prioritized Features without Stories
-f.write("<tr><th colspan=\"3\">Total</th><th>#{total_duration}</th><th colspan=#{days.count}></th></tr>")
-f.write("<tr><td colspan=#{4 + days.count}>Unestimated</td></tr>")
+raw_duration = ActiveRecord::Base.connection.execute('
+  SELECT SUM(story_estimate) as sum FROM days WHERE feature_id IS NULL')
+duration = raw_duration.to_a.first['sum'].to_i
+f.write("<td>#{duration}</td>")
 
-raw_features = ActiveRecord::Base.connection.execute('
-  SELECT *
-  FROM features
-  WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0)
-  ORDER BY priority ASC, id ASC
-')
+dates.each_with_index do |date, index|
+  f.write('<td>')
 
-raw_features.each do |feature|
-  f.write('<tr>')
+  if !is_free_day?(index, free_days)
+    day_id = (index - (index / 7).to_i * free_days).to_i
 
-  f.write("<td>#{feature['name']}</td>")
-  f.write("<td>#{feature['id']}</td>")
-  f.write("<td>#{feature['priority']}</td>")
+    raw_days = ActiveRecord::Base.connection.execute("
+        SELECT * FROM days WHERE id='#{day_id}' and feature_id IS NULL")
+    raw_days.each do |day|
+      f.write("#{day['story_estimate']} #{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+    end
 
-  f.write('</tr>')
+  else
+    if !is_weekend?(index)
+      f.write('&nbsp;')
+    else
+      f.write('-')
+    end
+  end
+
+  f.write('</td>')
 end
 
-
+f.write('</tr>')
+f.write('</table></body></html>')
 f.close
+
+puts 'Gantt Chart built'
