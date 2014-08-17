@@ -60,29 +60,33 @@ real_days_count.times do
   current_date = current_date + 1.day
 end
 
-f.write('
-      <tr>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th>Date &rarr;</th>')
+def draw_dates(f, dates)
+  f.write('
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th>Date &rarr;</th>')
 
-dates.each { |day| f.write "<th>#{day.strftime('%d&nbsp;%b')}</th>" }
+  dates.each { |day| f.write "<th>#{day.strftime('%d&nbsp;%b')}</th>" }
 
-f.write('</tr>
-      <tr>
-        <th>Feature</th>
-        <th>ID</th>
-        <th>Priority</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Duration</th>')
+  f.write('</tr>
+        <tr>
+          <th>Feature</th>
+          <th>ID</th>
+          <th>Priority</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Duration</th>')
 
-dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
+  dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
 
-f.write('</tr>')
+  f.write('</tr>')
+end
+
+draw_dates(f, dates)
 
 # Take prioritized Features, first with stories, then other
 if ENV['ORDER_BY_PRIORITY'] == 'true'
@@ -201,6 +205,9 @@ dates.each_with_index do |date, index|
 end
 
 f.write('</tr>')
+
+draw_dates(f, dates)
+
 f.write('</table></body></html>')
 f.close
 
