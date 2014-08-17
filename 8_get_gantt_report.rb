@@ -132,8 +132,6 @@ raw_features.each do |feature|
   f.write("<td>#{duration}</td>")
 
   dates.each_with_index do |date, index|
-    f.write('<td>')
-
     if !is_free_day?(index, free_days)
       day_id = (index - (index / 7).to_i * free_days).to_i
 
@@ -144,21 +142,18 @@ raw_features.each do |feature|
         GROUP BY story_project_id
       ")
 
-      total_estimate_day = 0
+      f.write('<td>')
       raw_days.each do |day|
-        total_estimate_day += day['story_estimate'].to_i
         f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
       end
-
+      f.write('</td>')
     else
       if !is_weekend?(index)
-        f.write('&nbsp;')
+        f.write('<td>&nbsp;</td>')
       else
-        f.write('-')
+        f.write('<td bgcolor="lightgrey">&nbsp;</td>')
       end
     end
-
-    f.write('</td>')
   end
 
   f.write('</tr>')
@@ -185,26 +180,24 @@ duration = raw_duration.to_a.first['sum'].to_i
 f.write("<td>#{duration}</td>")
 
 dates.each_with_index do |date, index|
-  f.write('<td>')
-
   if !is_free_day?(index, free_days)
     day_id = (index - (index / 7).to_i * free_days).to_i
 
     raw_days = ActiveRecord::Base.connection.execute("
         SELECT * FROM days WHERE id='#{day_id}' and feature_id IS NULL")
-    raw_days.each do |day|
-      f.write("#{day['story_estimate']} #{ENV["#{day['story_project_id']}_NAME"]}<br/>")
-    end
 
+    f.write('<td>')
+    raw_days.each do |day|
+      f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+    end
+    f.write('</td>')
   else
     if !is_weekend?(index)
-      f.write('&nbsp;')
+      f.write('<td>&nbsp;</td>')
     else
-      f.write('-')
+      f.write('<td bgcolor="lightgrey">&nbsp;</td>')
     end
   end
-
-  f.write('</td>')
 end
 
 f.write('</tr>')
