@@ -85,17 +85,23 @@ dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
 f.write('</tr>')
 
 # Take prioritized Features, first with stories, then other
-raw_features = ActiveRecord::Base.connection.execute('
-  (SELECT *
-  FROM features
-  WHERE id IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
-  ORDER BY priority ASC, id ASC)
-  UNION ALL
-  (SELECT *
-  FROM features
-  WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
-  ORDER BY priority ASC, id ASC)
-')
+if ENV['ORDER_BY_PRIORITY'] == 'true'
+  raw_features = ActiveRecord::Base.connection.execute('
+    (SELECT *
+    FROM features
+    WHERE id IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
+    ORDER BY priority ASC, id ASC)
+    UNION ALL
+    (SELECT *
+    FROM features
+    WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
+    ORDER BY priority ASC, id ASC)')
+else
+  raw_features = ActiveRecord::Base.connection.execute('
+    SELECT *
+    FROM features
+    ORDER BY id ASC')
+end
 
 raw_features.each do |feature|
   f.write('<tr>')
