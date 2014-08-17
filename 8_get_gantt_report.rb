@@ -28,7 +28,7 @@ real_days_count = (((days_count + holidays) / 7.0).ceil * 7).to_i
 
 def date_of_next(day)
   date  = Date.parse(day)
-  delta = date > Date.today ? 0 : 7
+  delta = date >= Date.today ? 0 : 7
   date + delta
 end
 
