@@ -16,14 +16,7 @@ f.write('
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   </head>
   <body>
-    <table border="1">
-      <tr>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th>Sprint &rarr;</th>')
+    <table border="1">')
 
 # Calculate helpers
 sprint_days = 5 * ENV['SPRINT_SIZE'].to_i / 40.0
@@ -32,10 +25,6 @@ sprints = (days_count / sprint_days).ceil.to_i
 free_days = 7 - sprint_days
 holidays = (sprints * free_days).to_i
 real_days_count = (((days_count + holidays) / 7.0).ceil * 7).to_i
-
-sprints.times do |i|
-  f.write "<th colspan=\"7\">#{i + 1}</th>"
-end
 
 def date_of_next(day)
   date  = Date.parse(day)
@@ -60,33 +49,23 @@ real_days_count.times do
   current_date = current_date + 1.day
 end
 
-def draw_dates(f, dates)
-  f.write('
-        <tr>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th></th>
-          <th>Date &rarr;</th>')
+def draw_dates(f, dates, sprints)
+  f.write('<tr><th></th><th></th><th></th><th></th><th></th><th>Sprint&nbsp;&rarr;</th>')
+  sprints.times do |i|
+    f.write "<th colspan=\"7\">#{i + 1}</th>"
+  end
+  f.write('</tr>')
 
+  f.write('<tr><th></th><th></th><th></th><th></th><th></th><th>Date&nbsp;&rarr;</th>')
   dates.each { |day| f.write "<th>#{day.strftime('%d&nbsp;%b')}</th>" }
+  f.write('</tr>')
 
-  f.write('</tr>
-        <tr>
-          <th>Feature</th>
-          <th>ID</th>
-          <th>Priority</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Duration</th>')
-
+  f.write('<tr><th>Feature</th><th>ID</th><th>Priority</th><th>Start</th><th>End</th><th>Duration</th>')
   dates.each { |day| f.write "<td>#{day.strftime('%a')}</td>" }
-
   f.write('</tr>')
 end
 
-draw_dates(f, dates)
+draw_dates(f, dates, sprints)
 
 # Take prioritized Features, first with stories, then other
 if ENV['ORDER_BY_PRIORITY'] == 'true'
@@ -206,7 +185,7 @@ end
 
 f.write('</tr>')
 
-draw_dates(f, dates)
+draw_dates(f, dates, sprints)
 
 f.write('</table></body></html>')
 f.close
