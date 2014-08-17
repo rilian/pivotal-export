@@ -128,6 +128,7 @@ raw_features.each do |feature|
       f.write('<td>')
       raw_days.each do |day|
         f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+        csv_data.last[:has_tasks] = true
       end
       f.write('</td>')
     else
@@ -195,7 +196,14 @@ puts 'Gantt Chart built'
 puts 'Produce Teamgantt CSV'
 f = File.open('tmp/teamgantt.csv', 'w')
 csv_data.each do |data|
-  f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
+  if data[:has_tasks].present?
+    f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
+  end
+  end
+csv_data.each do |data|
+  if !data[:has_tasks].present?
+    f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
+  end
 end
 f.close
 puts 'Teamgantt CSV built'
