@@ -16,7 +16,7 @@ f.write('
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   </head>
   <body>
-    <table border="1">')
+    <table border="0">')
 
 # Calculate helpers
 sprint_days = 5 * ENV['SPRINT_SIZE'].to_i / 40.0
@@ -125,12 +125,23 @@ raw_features.each do |feature|
         GROUP BY story_project_id
       ")
 
-      f.write('<td>')
+      has_tasks = false
+      tasks_html = ''
       raw_days.each do |day|
-        f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
-        csv_data.last[:has_tasks] = true
+        has_tasks = true
+        tasks_html << "#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>"
       end
-      f.write('</td>')
+      csv_data.last[:has_tasks] = has_tasks
+
+      if has_tasks
+        if ENV['SHOW_PROJECTS_IN_DAY_CELLS'] == 'true'
+          f.write("<td>#{tasks_html}</td>")
+        else
+          f.write("<td bgcolor=\"#{ENV['TASKS_COLOR']}\">&nbsp;</td>")
+        end
+      else
+        f.write('<td></td>')
+      end
     else
       if !is_weekend?(index)
         f.write('<td>&nbsp;</td>')
@@ -170,11 +181,23 @@ dates.each_with_index do |date, index|
     raw_days = ActiveRecord::Base.connection.execute("
         SELECT * FROM days WHERE id='#{day_id}' and feature_id IS NULL")
 
-    f.write('<td>')
+    has_tasks = false
+    tasks_html = ''
     raw_days.each do |day|
-      f.write("#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>")
+      has_tasks = true
+      tasks_html << "#{day['story_estimate']}h&nbsp;#{ENV["#{day['story_project_id']}_NAME"]}<br/>"
     end
-    f.write('</td>')
+    csv_data.last[:has_tasks] = has_tasks
+
+    if has_tasks
+      if ENV['SHOW_PROJECTS_IN_DAY_CELLS'] == 'true'
+        f.write("<td>#{tasks_html}</td>")
+      else
+        f.write("<td bgcolor=\"#{ENV['TASKS_COLOR']}\">&nbsp;</td>")
+      end
+    else
+      f.write('<td></td>')
+    end
   else
     if !is_weekend?(index)
       f.write('<td>&nbsp;</td>')
@@ -196,12 +219,12 @@ puts 'Gantt Chart built'
 puts 'Produce Teamgantt CSV'
 f = File.open('tmp/teamgantt.csv', 'w')
 csv_data.each do |data|
-  if data[:has_tasks].present?
+  if data[:has_tasks]
     f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
   end
   end
 csv_data.each do |data|
-  if !data[:has_tasks].present?
+  if !data[:has_tasks]
     f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
   end
 end
