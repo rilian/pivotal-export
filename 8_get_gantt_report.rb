@@ -135,7 +135,7 @@ raw_features.each do |feature|
       if !is_weekend?(index)
         f.write('<td>&nbsp;</td>')
       else
-        f.write('<td bgcolor="lightgrey">&nbsp;</td>')
+        f.write("<td bgcolor=\"#{ENV['WEEKENDS_COLOR']}\">&nbsp;</td>")
       end
     end
   end
@@ -179,7 +179,7 @@ dates.each_with_index do |date, index|
     if !is_weekend?(index)
       f.write('<td>&nbsp;</td>')
     else
-      f.write('<td bgcolor="lightgrey">&nbsp;</td>')
+      f.write("<td bgcolor=\"#{ENV['WEEKENDS_COLOR']}\">&nbsp;</td>")
     end
   end
 end
