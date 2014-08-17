@@ -31,20 +31,11 @@ days_count = ActiveRecord::Base.connection.execute('SELECT COUNT(DISTINCT id) FR
 sprints = (days_count / sprint_days).ceil.to_i
 free_days = 7 - sprint_days
 holidays = (sprints * free_days).to_i
-real_days_count = days_count + holidays
+real_days_count = (((days_count + holidays) / 7.0).ceil * 7).to_i
 
 sprints.times do |i|
   f.write "<th colspan=\"7\">#{i + 1}</th>"
 end
-
-f.write('
-      <tr>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th>Date &rarr;</th>')
 
 def date_of_next(day)
   date  = Date.parse(day)
@@ -54,7 +45,7 @@ end
 
 def is_free_day?(index, free_days)
   (index % 7).to_i >= 7 - free_days
-  end
+end
 
 def is_weekend?(index)
   (index % 7).to_i >= 5
@@ -69,7 +60,16 @@ real_days_count.times do
   current_date = current_date + 1.day
 end
 
-dates.each { |day| f.write "<th>#{day.strftime('%d %b')}</th>" }
+f.write('
+      <tr>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th>Date &rarr;</th>')
+
+dates.each { |day| f.write "<th>#{day.strftime('%d&nbsp;%b')}</th>" }
 
 f.write('</tr>
       <tr>
@@ -114,15 +114,15 @@ raw_features.each do |feature|
   raw_start_day = ActiveRecord::Base.connection.execute("
     SELECT min(id) FROM days WHERE feature_id=#{feature['id']}")
   start_day_id = raw_start_day.to_a.first['min'].to_i
-  date_id = (start_day_id + (start_day_id / 7).to_i * free_days).to_i
-  f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+  date_id = (start_day_id + (start_day_id / (7 - free_days)).to_i * free_days).to_i
+  f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
   csv_data.last[:start_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_end_day = ActiveRecord::Base.connection.execute("
     SELECT max(id) FROM days WHERE feature_id=#{feature['id']}")
   end_day_id = raw_end_day.to_a.first['max'].to_i
-  date_id = (end_day_id + (end_day_id / 7).to_i * free_days).to_i
-  f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+  date_id = (end_day_id + (end_day_id / (7 - free_days)).to_i * free_days).to_i
+  f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
   csv_data.last[:end_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_duration = ActiveRecord::Base.connection.execute("
@@ -166,13 +166,13 @@ raw_start_day = ActiveRecord::Base.connection.execute('
     SELECT min(id) FROM days WHERE feature_id IS NULL')
 start_day_id = raw_start_day.to_a.first['min'].to_i
 date_id = (start_day_id + (start_day_id / (7 - free_days)).to_i * free_days).to_i
-f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
 
 raw_end_day = ActiveRecord::Base.connection.execute('
     SELECT max(id) FROM days WHERE feature_id IS NULL')
 end_day_id = raw_end_day.to_a.first['max'].to_i
 date_id = (end_day_id + (end_day_id / (7 - free_days)).to_i * free_days).to_i
-f.write("<td>#{dates[date_id].strftime('%d %b')}</td>")
+f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
 
 raw_duration = ActiveRecord::Base.connection.execute('
   SELECT SUM(story_estimate) as sum FROM days WHERE feature_id IS NULL')
