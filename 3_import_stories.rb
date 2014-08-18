@@ -69,7 +69,47 @@ if ENV['DROP_TABLES'] == 'true'
   ')
 end
 
+# if ENV['GUESSTIMATE_FEATURES'] = 'true'
+#   puts 'Add guesstimated stories'
+#
+#   raw_features_without_stories = ActiveRecord::Base.connection.execute('
+#     SELECT *
+#     FROM features
+#     WHERE id NOT IN (SELECT feature_id FROM stories WHERE feature_id > 0 AND accepted_at IS NULL)
+#     ORDER BY priority ASC, id ASC
+#   ')
+#
+#   raw_features_without_stories.each do |feature|
+#     puts "feature #{feature['id']}"
+#     ENV['PROJECT_IDS'].split(',').each do |project_id|
+#       puts "project #{project_id}"
+#       total_hours = ENV["#{project_id}_FEATURE_GESSTIMATE_HOURS"].to_i
+#       puts "total hours = #{total_hours}"
+#       while total_hours > 0
+#         @stories << {
+#           "kind" => "story",
+#           "id" => @stories.last['id'].to_i + 1,
+#           "created_at" => 1394886190000,
+#           "updated_at" => 1394958166000,
+#           "estimate" => [total_hours, ENV['WORK_DAY_HOURS'].to_i].min,
+#           "story_type" => "feature",
+#           "name" => "DO #{feature['name']}",
+#           "description" => "need some discussion",
+#           "current_state" => "unscheduled",
+#           "requested_by_id" => @stories.last['requested_by_id'],
+#           "project_id" => project_id.to_i,
+#           "url" => "",
+#           "owner_ids" => [0],
+#           "labels" => [{"name" => "f#{feature['id']}"}],
+#           "owned_by_id" => 0
+#         }
+#         puts "added story of #{[total_hours, ENV['WORK_DAY_HOURS'].to_i].min} hours"
+#         total_hours -= ENV['WORK_DAY_HOURS'].to_i
+#       end
+#     end
+#   end
+# end
+
 @stories.each do |story|
   ActiveRecord::Base.connection.execute(get_story_record(story))
 end
-

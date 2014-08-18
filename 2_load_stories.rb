@@ -2,6 +2,8 @@ require 'dotenv'
 Dotenv.load
 require 'fileutils'
 require 'json'
+require 'byebug'
+require_relative 'db'
 
 PROJECT_IDS = ENV['PROJECT_IDS'].split(',')
 PIVOTAL_API_KEY = ENV['PIVOTAL_API_KEY']

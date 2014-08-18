@@ -42,6 +42,7 @@ end
 
 next_start_of_week_date = date_of_next('Monday')
 dates = []
+date_format = '%d&nbsp;%b&nbsp;%Y'
 csv_data = []
 current_date = next_start_of_week_date
 real_days_count.times do
@@ -49,7 +50,7 @@ real_days_count.times do
   current_date = current_date + 1.day
 end
 
-def draw_dates(f, dates, sprints)
+def draw_dates(f, dates, sprints, date_format)
   f.write('<tr><th></th><th></th><th></th><th></th><th></th><th>Sprint&nbsp;&rarr;</th>')
   sprints.times do |i|
     f.write "<th colspan=\"7\">#{i + 1}</th>"
@@ -57,7 +58,7 @@ def draw_dates(f, dates, sprints)
   f.write('</tr>')
 
   f.write('<tr><th></th><th></th><th></th><th></th><th></th><th>Date&nbsp;&rarr;</th>')
-  dates.each { |day| f.write "<th>#{day.strftime('%d&nbsp;%b')}</th>" }
+  dates.each { |day| f.write "<th>#{day.strftime(date_format)}</th>" }
   f.write('</tr>')
 
   f.write('<tr><th>Feature</th><th>ID</th><th>Priority</th><th>Start</th><th>End</th><th>Duration</th>')
@@ -65,7 +66,7 @@ def draw_dates(f, dates, sprints)
   f.write('</tr>')
 end
 
-draw_dates(f, dates, sprints)
+draw_dates(f, dates, sprints, date_format)
 
 # Take prioritized Features, first with stories, then other
 if ENV['ORDER_BY_PRIORITY'] == 'true'
@@ -98,14 +99,14 @@ raw_features.each do |feature|
     SELECT min(id) FROM days WHERE feature_id=#{feature['id']}")
   start_day_id = raw_start_day.to_a.first['min'].to_i
   date_id = (start_day_id + (start_day_id / (7 - free_days)).to_i * free_days).to_i
-  f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
+  f.write("<td>#{dates[date_id].strftime(date_format)}</td>")
   csv_data.last[:start_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_end_day = ActiveRecord::Base.connection.execute("
     SELECT max(id) FROM days WHERE feature_id=#{feature['id']}")
   end_day_id = raw_end_day.to_a.first['max'].to_i
   date_id = (end_day_id + (end_day_id / (7 - free_days)).to_i * free_days).to_i
-  f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
+  f.write("<td>#{dates[date_id].strftime(date_format)}</td>")
   csv_data.last[:end_date] = dates[date_id].strftime('%d %b, %Y')
 
   raw_duration = ActiveRecord::Base.connection.execute("
@@ -161,13 +162,13 @@ raw_start_day = ActiveRecord::Base.connection.execute('
     SELECT min(id) FROM days WHERE feature_id IS NULL')
 start_day_id = raw_start_day.to_a.first['min'].to_i
 date_id = (start_day_id + (start_day_id / (7 - free_days)).to_i * free_days).to_i
-f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
+f.write("<td>#{dates[date_id].strftime(date_format)}</td>")
 
 raw_end_day = ActiveRecord::Base.connection.execute('
     SELECT max(id) FROM days WHERE feature_id IS NULL')
 end_day_id = raw_end_day.to_a.first['max'].to_i
 date_id = (end_day_id + (end_day_id / (7 - free_days)).to_i * free_days).to_i
-f.write("<td>#{dates[date_id].strftime('%d&nbsp;%b')}</td>")
+f.write("<td>#{dates[date_id].strftime(date_format)}</td>")
 
 raw_duration = ActiveRecord::Base.connection.execute('
   SELECT SUM(story_estimate) as sum FROM days WHERE feature_id IS NULL')
@@ -209,24 +210,18 @@ end
 
 f.write('</tr>')
 
-draw_dates(f, dates, sprints)
+draw_dates(f, dates, sprints, date_format)
 
 f.write('</table></body></html>')
 f.close
 
 puts 'Gantt Chart built'
 
+# Export
 puts 'Produce Teamgantt CSV'
 f = File.open('tmp/teamgantt.csv', 'w')
 csv_data.each do |data|
-  if data[:has_tasks]
-    f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
-  end
-  end
-csv_data.each do |data|
-  if !data[:has_tasks]
-    f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
-  end
+  f.write("\"#{data[:group_name]}\",\"#{data[:start_date]}\",\"#{data[:end_date]}\"\n")
 end
 f.close
 puts 'Teamgantt CSV built'
