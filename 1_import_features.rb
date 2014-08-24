@@ -1,5 +1,7 @@
 require 'dotenv'
 Dotenv.load
+require 'byebug'
+
 require_relative 'db'
 
 puts "Import features from #{ENV['FEATURES_FILE']}"
@@ -19,8 +21,9 @@ end
 
 if File.exists?(ENV['FEATURES_FILE'])
   @features = File.read(ENV['FEATURES_FILE']).lines
-  @features.each do |feature|
-    matches = feature.match(/(?<id>[0-9]+)\s+(?<priority>[0-9]+)\s+(?<name>.*)/m)
+  @features.each_with_index do |feature, index|
+    matches = feature.match(/(?<name>.*)(\t*\d{0,1}\t*\d{0,1}\t)(?<priority>[0-9]+)/m)
+
     if matches
       ActiveRecord::Base.connection.execute(
         "INSERT INTO \"features\" (
@@ -28,9 +31,9 @@ if File.exists?(ENV['FEATURES_FILE'])
            priority,
            name
          ) VALUES (
-           #{matches['id']},
+           #{index},
            #{matches['priority']},
-           #{ActiveRecord::Base.connection.quote(matches['name'])}
+           #{ActiveRecord::Base.connection.quote(matches['name'].gsub(/\d+/, '').strip)}
          );"
       )
     else
